@@ -3,137 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EasyPi Remote Access</title>
+  <title>EasyPi Admin</title>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 
   <style>
-    :root{
-      --bg1:#0b1220; --bg2:#0f172a;
-      --card:#121a2b; --card2:#0e1626;
-      --accent:#3b82f6; --accent2:#60a5fa;
-      --ok:#22c55e; --bad:#ef4444;
-      --text:#e5e7eb; --muted:#94a3b8;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:Inter,system-ui,Arial;background:linear-gradient(135deg,var(--bg1),var(--bg2) 40%,var(--bg1));color:var(--text)}
-    header{padding:18px 24px;font-size:22px;font-weight:700;background:rgba(0,0,0,.25);backdrop-filter:blur(6px);border-bottom:1px solid rgba(255,255,255,.06)}
-    .wrap{max-width:1100px;margin:auto;padding:28px}
-    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:22px}
-    .card{background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:22px;box-shadow:0 10px 30px rgba(0,0,0,.35)}
-    h2{margin:0 0 14px} h3{margin:18px 0 10px}
-    input,select,button{width:100%;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:#0b1324;color:var(--text);margin:8px 0;font-size:14px}
-    input::placeholder{color:#64748b}
-    button{background:linear-gradient(135deg,var(--accent),var(--accent2));border:none;font-weight:600;cursor:pointer;transition:.15s transform,.15s opacity}
-    button:hover{transform:translateY(-1px);opacity:.95}
+    body{margin:0;font-family:Inter,system-ui,Arial;background:#0b1220;color:#e5e7eb}
+    header{padding:18px 24px;font-size:22px;font-weight:700;background:#0f172a;border-bottom:1px solid rgba(255,255,255,.08)}
+    .wrap{max-width:720px;margin:auto;padding:28px}
+    .card{background:#111827;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:22px;margin-bottom:20px}
+    input,select,button{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:#0b1324;color:#e5e7eb;margin:8px 0}
+    button{background:#3b82f6;border:none;font-weight:600;cursor:pointer}
     button.secondary{background:#1f2937}
-    button.success{background:linear-gradient(135deg,#16a34a,#22c55e)}
-    .row{display:flex;gap:10px;flex-wrap:wrap} .row>*{flex:1}
-    .pill{display:inline-block;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:700}
-    .ok{background:rgba(34,197,94,.15);color:var(--ok)} .bad{background:rgba(239,68,68,.15);color:var(--bad)}
-    .muted{color:var(--muted);font-size:13px}
     .hidden{display:none}
     .msg{font-size:13px;margin-top:6px}
-    .footerBar{position:fixed;left:0;right:0;bottom:0;background:rgba(2,6,23,.9);border-top:1px solid rgba(255,255,255,.08);padding:14px 18px;display:flex;gap:12px;align-items:center;justify-content:center}
-    .footerBar .inner{max-width:1100px;width:100%;display:flex;gap:12px;align-items:center;justify-content:space-between}
-
-    /* Paywall Modal */
-    .modalWrap{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:20px}
-    .modal{max-width:460px;width:100%;background:linear-gradient(180deg,var(--card),var(--card2));border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-    .modal h2{margin-bottom:8px}
   </style>
 </head>
 <body>
-<header>EasyPi — Remote Raspberry Pi Access</header>
-
+<header>EasyPi Admin Panel</header>
 <div class="wrap">
-  <div class="grid">
 
-    <!-- AUTH -->
-    <div id="authCard" class="card">
-      <h2>Sign In</h2>
-      <button id="googleBtn">Continue with Google</button>
-      <div class="muted" style="margin:10px 0">or</div>
-      <input id="emailInput" type="email" placeholder="Email address" />
-      <input id="passwordInput" type="password" placeholder="Password" />
-      <div class="row">
-        <button id="loginBtn">Login</button>
-        <button id="signupBtn" class="secondary">Sign Up</button>
-      </div>
-      <div id="authMsg" class="msg"></div>
-    </div>
-
-    <!-- USER APP -->
-    <div id="appCard" class="card hidden">
-      <h2>Your Account</h2>
-      <div class="muted">Signed in as</div>
-      <div style="font-weight:700;margin-bottom:12px" id="userEmail"></div>
-      <div><span id="statusPill" class="pill">Checking…</span></div>
-      <div class="muted" style="margin-top:6px">Access expires: <span id="expiryText">—</span></div>
-
-      <h3>Remote Access</h3>
-      <button id="connectBtn" class="success hidden">Connect to Raspberry Pi</button>
-      <div class="muted">Secure remote session</div>
-
-      <h3>Subscription</h3>
-      <div class="muted">£2 per month</div>
-      <button id="subscribeBtn">Manage Subscription</button>
-
-      <hr style="border-color:rgba(255,255,255,.08);margin:18px 0">
-      <button id="logoutBtn" class="secondary">Logout</button>
-    </div>
-
-    <!-- ADMIN LOGIN -->
-    <div id="adminLoginCard" class="card hidden">
-      <h2>Admin Login</h2>
-      <div class="muted">Restricted access</div>
-      <input id="adminEmail" type="email" placeholder="Admin email" />
-      <input id="adminPass" type="password" placeholder="Admin password" />
-      <button id="adminLoginBtn">Enter Admin Panel</button>
-      <div id="adminLoginMsg" class="msg"></div>
-    </div>
-
-    <!-- ADMIN PANEL -->
-    <div id="adminCard" class="card hidden">
-      <h2>Admin Panel</h2>
-      <div class="muted">Grant access for in-person payments</div>
-      <input id="grantEmail" placeholder="User email" />
-      <select id="durationSelect">
-        <option value="7">7 days</option>
-        <option value="30">30 days</option>
-        <option value="90">90 days</option>
-        <option value="365">365 days</option>
-      </select>
-      <button id="grantBtn">Grant Access</button>
-      <div id="adminMsg" class="msg"></div>
-    </div>
-
+  <div id="loginCard" class="card">
+    <h2>Admin Login</h2>
+    <input id="email" type="email" placeholder="Admin email" />
+    <input id="pass" type="password" placeholder="Admin password" />
+    <button id="loginBtn">Login</button>
+    <div id="loginMsg" class="msg"></div>
   </div>
-</div>
 
-<!-- Bottom Bar (shown when active) -->
-<div id="footerBar" class="footerBar hidden">
-  <div class="inner">
-    <div>✅ Subscription Active</div>
-    <button id="footerConnectBtn" class="success">Connect</button>
+  <div id="adminCard" class="card hidden">
+    <h2>Grant User Access</h2>
+    <input id="userEmail" placeholder="User email" />
+    <select id="duration">
+      <option value="7">7 days</option>
+      <option value="30">30 days</option>
+      <option value="90">90 days</option>
+      <option value="365">365 days</option>
+    </select>
+    <button id="grantBtn">Grant Access</button>
+    <div id="msg" class="msg"></div>
+    <button class="secondary" onclick="location.href='index.html'">Back</button>
   </div>
-</div>
 
-<!-- Paywall Modal (shown when expired) -->
-<div id="paywall" class="modalWrap hidden">
-  <div class="modal">
-    <h2>Subscription Required</h2>
-    <div class="muted">Your access has expired.</div>
-    <div style="margin:12px 0">Get full remote access for <b>£2/month</b></div>
-    <button id="payNowBtn">Pay & Unlock</button>
-    <button id="closePaywall" class="secondary">Maybe Later</button>
-  </div>
 </div>
 
 <script>
-// ================= Firebase Config =================
+// ================= Firebase =================
 const firebaseConfig = {
   apiKey: "AIzaSyD-pAnfOlyo5BY5vel9b8oUPaztlHeAAQU",
   authDomain: "easypi-85674.firebaseapp.com",
@@ -141,163 +58,42 @@ const firebaseConfig = {
   projectId: "easypi-85674",
   storageBucket: "easypi-85674.firebasestorage.app",
   messagingSenderId: "686355179435",
-  appId: "1:686355179435:web:600cd3079ae3884e8c54ee",
-  measurementId: "G-8PD84HNLP7"
+  appId: "1:686355179435:web:600cd3079ae3884e8c54ee"
 };
 firebase.initializeApp(firebaseConfig);
-
-const auth = firebase.auth();
 const db = firebase.database();
-const provider = new firebase.auth.GoogleAuthProvider();
-
-// ================= UI =================
-const authCard = document.getElementById('authCard');
-const appCard = document.getElementById('appCard');
-const adminLoginCard = document.getElementById('adminLoginCard');
-const adminCard = document.getElementById('adminCard');
-
-const footerBar = document.getElementById('footerBar');
-const paywall = document.getElementById('paywall');
-
-const emailInput = document.getElementById('emailInput');
-const passwordInput = document.getElementById('passwordInput');
-
-const authMsg = document.getElementById('authMsg');
-const adminLoginMsg = document.getElementById('adminLoginMsg');
-const adminMsg = document.getElementById('adminMsg');
-
-const userEmailEl = document.getElementById('userEmail');
-const statusPill = document.getElementById('statusPill');
-const expiryText = document.getElementById('expiryText');
-
-const connectBtn = document.getElementById('connectBtn');
-const footerConnectBtn = document.getElementById('footerConnectBtn');
-
-// ================= Helpers =================
-function daysFromNow(days){ const d=new Date(); d.setDate(d.getDate()+Number(days)); return d.toISOString(); }
-function isActive(expiry){ return expiry && new Date(expiry) > new Date(); }
-function setStatus(active){
-  if(active){ statusPill.textContent='Active'; statusPill.className='pill ok'; }
-  else{ statusPill.textContent='Expired'; statusPill.className='pill bad'; }
-}
-function showPaywall(show){ paywall.classList.toggle('hidden', !show); }
-function showFooter(show){ footerBar.classList.toggle('hidden', !show); }
-
-// ================= Auth =================
-document.getElementById('googleBtn').onclick = async ()=>{
-  authMsg.textContent='';
-  try{ await auth.signInWithPopup(provider); }
-  catch(e){ authMsg.textContent=e.message; }
-};
-
-document.getElementById('loginBtn').onclick = async ()=>{
-  authMsg.textContent='';
-  try{ await auth.signInWithEmailAndPassword(emailInput.value.trim(), passwordInput.value.trim()); }
-  catch(e){ authMsg.textContent=e.message; }
-};
-
-document.getElementById('signupBtn').onclick = async ()=>{
-  authMsg.textContent='';
-  try{ await auth.createUserWithEmailAndPassword(emailInput.value.trim(), passwordInput.value.trim()); }
-  catch(e){ authMsg.textContent=e.message; }
-};
-
-document.getElementById('logoutBtn').onclick = ()=>auth.signOut();
-
-// ================= Auth State =================
-auth.onAuthStateChanged(async user=>{
-  if(!user){
-    authCard.classList.remove('hidden');
-    appCard.classList.add('hidden');
-    adminLoginCard.classList.add('hidden');
-    adminCard.classList.add('hidden');
-    showFooter(false); showPaywall(false);
-    return;
-  }
-
-  authCard.classList.add('hidden');
-  appCard.classList.remove('hidden');
-
-  userEmailEl.textContent = user.email;
-  await db.ref('users/'+user.uid+'/email').set(user.email);
-
-  const snap = await db.ref('users/'+user.uid).get();
-  const data = snap.val() || {};
-
-  const active = isActive(data.accessExpires);
-  setStatus(active);
-  expiryText.textContent = active ? new Date(data.accessExpires).toLocaleString() : '—';
-
-  // Connect button + paywall logic
-  connectBtn.classList.toggle('hidden', !active);
-  showFooter(active);
-  showPaywall(!active);
-
-  // Show admin login shortcut only for your account
-  if(user.email === 'hamishgordon051@gmail.com'){
-    adminLoginCard.classList.remove('hidden');
-  } else {
-    adminLoginCard.classList.add('hidden');
-    adminCard.classList.add('hidden');
-  }
-});
-
-// ================= Connect =================
-function connectToPi(){
-  // TODO: Replace with your real connection method
-  alert('Connecting to Raspberry Pi...');
-}
-connectBtn.onclick = connectToPi;
-footerConnectBtn.onclick = connectToPi;
-
-// ================= Payments =================
-document.getElementById('subscribeBtn').onclick = ()=>{
-  alert('Stripe customer portal / checkout goes here');
-};
-
-document.getElementById('payNowBtn').onclick = ()=>{
-  alert('Stripe checkout goes here');
-};
-
-document.getElementById('closePaywall').onclick = ()=>showPaywall(false);
 
 // ================= Admin Security =================
-// NOTE: Real security should be enforced with Firebase rules + custom claims.
-// This adds a client-side gate plus account check.
 const ADMIN_EMAIL = 'hamishgordon051@gmail.com';
 const ADMIN_PASS  = 'CHANGE_THIS_STRONG_PASSWORD';
 
-let adminUnlocked = false;
+let unlocked=false;
 
-document.getElementById('adminLoginBtn').onclick = ()=>{
-  const e = document.getElementById('adminEmail').value.trim();
-  const p = document.getElementById('adminPass').value.trim();
-
-  if(e===ADMIN_EMAIL && p===ADMIN_PASS){
-    adminUnlocked = true;
-    adminLoginMsg.textContent='Access granted';
+loginBtn.onclick = ()=>{
+  if(email.value.trim()===ADMIN_EMAIL && pass.value.trim()===ADMIN_PASS){
+    unlocked=true;
+    loginCard.classList.add('hidden');
     adminCard.classList.remove('hidden');
-  } else {
-    adminLoginMsg.textContent='Invalid admin credentials';
+  }else{
+    loginMsg.textContent='Invalid credentials';
   }
 };
 
-// Grant access (cash)
-document.getElementById('grantBtn').onclick = async ()=>{
-  adminMsg.textContent='';
-  if(!adminUnlocked){ adminMsg.textContent='Admin locked'; return; }
+// ================= Grant Access =================
+function daysFromNow(days){ const d=new Date(); d.setDate(d.getDate()+Number(days)); return d.toISOString(); }
 
-  const emailVal = document.getElementById('grantEmail').value.trim();
-  const days = document.getElementById('durationSelect').value;
+grantBtn.onclick = async ()=>{
+  if(!unlocked){ msg.textContent='Locked'; return; }
+  const emailVal=userEmail.value.trim();
   if(!emailVal) return;
 
-  const usersSnap = await db.ref('users').get();
+  const snap=await db.ref('users').get();
   let uid=null;
-  usersSnap.forEach(child=>{ if(child.val().email===emailVal) uid=child.key; });
-  if(!uid){ adminMsg.textContent='User not found'; return; }
+  snap.forEach(c=>{ if(c.val().email===emailVal) uid=c.key; });
+  if(!uid){ msg.textContent='User not found'; return; }
 
-  await db.ref('users/'+uid).update({ accessExpires: daysFromNow(days), paymentType:'cash' });
-  adminMsg.textContent='Access granted';
+  await db.ref('users/'+uid).update({ accessExpires: daysFromNow(duration.value), paymentType:'cash' });
+  msg.textContent='Access granted';
 };
 </script>
 </body>
