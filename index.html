@@ -3,69 +3,173 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Pi Remote Access</title>
+  <title>EasyPi Remote Access</title>
+
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
   <style>
-    body{font-family:Arial;margin:0;background:#0f172a;color:#e2e8f0}
-    header{background:#111827;padding:16px;font-size:20px;font-weight:bold}
-    .container{max-width:900px;margin:auto;padding:20px}
-    .card{background:#1f2937;padding:16px;border-radius:12px;margin-bottom:16px}
-    input,select,button{padding:10px;margin:6px 0;border-radius:8px;border:none}
-    input,select{width:100%}
-    button{cursor:pointer;background:#2563eb;color:white}
-    button.secondary{background:#374151}
+    :root{
+      --bg:#0b1220;
+      --card:#121a2b;
+      --card2:#0f172a;
+      --accent:#3b82f6;
+      --accent2:#60a5fa;
+      --ok:#22c55e;
+      --bad:#ef4444;
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,Arial;
+      background:linear-gradient(135deg,#0b1220,#0f172a 40%,#0b1220);
+      color:var(--text);
+    }
+
+    header{
+      padding:18px 24px;
+      font-size:22px;
+      font-weight:700;
+      letter-spacing:.5px;
+      background:rgba(0,0,0,.25);
+      backdrop-filter:blur(6px);
+      border-bottom:1px solid rgba(255,255,255,.06);
+    }
+
+    .wrap{max-width:1000px;margin:auto;padding:28px}
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+      gap:22px;
+    }
+
+    .card{
+      background:linear-gradient(180deg,var(--card),var(--card2));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:18px;
+      padding:22px;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+    }
+
+    h2{margin:0 0 14px}
+    h3{margin:18px 0 10px}
+
+    input,select,button{
+      width:100%;
+      padding:12px 14px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.08);
+      background:#0b1324;
+      color:var(--text);
+      margin:8px 0;
+      font-size:14px;
+    }
+
+    input::placeholder{color:#64748b}
+
+    button{
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      border:none;
+      font-weight:600;
+      cursor:pointer;
+      transition:.15s transform,.15s opacity;
+    }
+
+    button:hover{transform:translateY(-1px);opacity:.95}
+    button.secondary{background:#1f2937}
+
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    .row > *{flex:1}
+
+    .pill{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:600;
+    }
+
+    .ok{background:rgba(34,197,94,.15);color:var(--ok)}
+    .bad{background:rgba(239,68,68,.15);color:var(--bad)}
+    .muted{color:var(--muted);font-size:13px}
+
     .hidden{display:none}
-    .success{color:#22c55e}
-    .danger{color:#ef4444}
+    .msg{font-size:13px;margin-top:6px}
   </style>
 </head>
 <body>
-<header>Pi Remote Access</header>
-<div class="container">
+<header>EasyPi — Remote Raspberry Pi Access</header>
 
-  <div id="authCard" class="card">
-    <h2>Login / Sign Up</h2>
-    <button id="googleBtn">Sign in with Google</button>
-    <hr/>
-    <input id="email" placeholder="Email" />
-    <input id="password" type="password" placeholder="Password" />
-    <button id="emailLoginBtn">Login / Sign Up</button>
-    <p id="authMsg"></p>
+<div class="wrap">
+  <div class="grid">
+
+    <!-- AUTH -->
+    <div id="authCard" class="card">
+      <h2>Sign In</h2>
+
+      <button id="googleBtn">Continue with Google</button>
+
+      <div class="muted" style="margin:10px 0">or</div>
+
+      <input id="emailInput" type="email" placeholder="Email address" />
+      <input id="passwordInput" type="password" placeholder="Password" />
+
+      <div class="row">
+        <button id="loginBtn">Login</button>
+        <button id="signupBtn" class="secondary">Sign Up</button>
+      </div>
+
+      <div id="authMsg" class="msg"></div>
+    </div>
+
+    <!-- USER APP -->
+    <div id="appCard" class="card hidden">
+      <h2>Your Account</h2>
+      <div class="muted">Signed in as</div>
+      <div style="font-weight:600;margin-bottom:12px" id="userEmail"></div>
+
+      <div>
+        <span id="statusPill" class="pill">Checking…</span>
+      </div>
+      <div class="muted" style="margin-top:6px">
+        Access expires: <span id="expiryText">—</span>
+      </div>
+
+      <h3>Subscription</h3>
+      <button id="subscribeBtn">Subscribe — £2/month</button>
+
+      <h3>Redeem Access Code</h3>
+      <input id="codeInput" placeholder="Enter code" />
+      <button id="redeemBtn" class="secondary">Redeem Code</button>
+      <div id="codeMsg" class="msg"></div>
+
+      <hr style="border-color:rgba(255,255,255,.08);margin:18px 0">
+      <button id="logoutBtn" class="secondary">Logout</button>
+    </div>
+
+    <!-- ADMIN -->
+    <div id="adminCard" class="card hidden">
+      <h2>Admin Panel</h2>
+      <div class="muted">Grant access for in-person payments</div>
+
+      <input id="adminEmailInput" placeholder="User email" />
+      <select id="durationSelect">
+        <option value="7">7 days</option>
+        <option value="30">30 days</option>
+        <option value="90">90 days</option>
+        <option value="365">365 days</option>
+      </select>
+
+      <button id="grantBtn">Grant Access</button>
+      <div id="adminMsg" class="msg"></div>
+    </div>
+
   </div>
-
-  <div id="appCard" class="card hidden">
-    <h2>Account</h2>
-    <p><b>User:</b> <span id="userEmail"></span></p>
-    <p><b>Status:</b> <span id="statusText">Checking...</span></p>
-    <p><b>Access Expires:</b> <span id="expiryText">—</span></p>
-
-    <h3>Online Subscription</h3>
-    <button id="subscribeBtn">Subscribe £2 / month</button>
-
-    <h3>Access Code</h3>
-    <input id="codeInput" placeholder="Enter access code" />
-    <button id="redeemBtn">Redeem Code</button>
-    <p id="codeMsg"></p>
-
-    <hr/>
-    <button id="logoutBtn" class="secondary">Logout</button>
-  </div>
-
-  <div id="adminCard" class="card hidden">
-    <h2>Admin Panel</h2>
-    <input id="adminEmail" placeholder="User email" />
-    <select id="durationSelect">
-      <option value="7">7 days</option>
-      <option value="30">30 days</option>
-      <option value="90">90 days</option>
-      <option value="365">365 days</option>
-    </select>
-    <button id="grantBtn">Grant Access (Cash)</button>
-    <p id="adminMsg"></p>
-  </div>
-
 </div>
 
 <script>
@@ -73,17 +177,35 @@
 const firebaseConfig = {
   apiKey: "AIzaSyD-pAnfOlyo5BY5vel9b8oUPaztlHeAAQU",
   authDomain: "easypi-85674.firebaseapp.com",
+  databaseURL: "https://easypi-85674-default-rtdb.firebaseio.com",
   projectId: "easypi-85674",
   storageBucket: "easypi-85674.firebasestorage.app",
   messagingSenderId: "686355179435",
   appId: "1:686355179435:web:600cd3079ae3884e8c54ee",
   measurementId: "G-8PD84HNLP7"
 };
+
 firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
 const db = firebase.database();
 const provider = new firebase.auth.GoogleAuthProvider();
+
+// ================= UI Refs =================
+const authCard = document.getElementById('authCard');
+const appCard = document.getElementById('appCard');
+const adminCard = document.getElementById('adminCard');
+
+const emailInput = document.getElementById('emailInput');
+const passwordInput = document.getElementById('passwordInput');
+
+const authMsg = document.getElementById('authMsg');
+const codeMsg = document.getElementById('codeMsg');
+const adminMsg = document.getElementById('adminMsg');
+
+const userEmailEl = document.getElementById('userEmail');
+const statusPill = document.getElementById('statusPill');
+const expiryText = document.getElementById('expiryText');
 
 // ================= Helpers =================
 function daysFromNow(days){
@@ -96,31 +218,52 @@ function isActive(expiry){
   return expiry && new Date(expiry) > new Date();
 }
 
+function setStatus(active){
+  if(active){
+    statusPill.textContent = 'Active';
+    statusPill.className = 'pill ok';
+  } else {
+    statusPill.textContent = 'Not Active';
+    statusPill.className = 'pill bad';
+  }
+}
+
 // ================= Auth =================
-const authCard = document.getElementById('authCard');
-const appCard = document.getElementById('appCard');
-const adminCard = document.getElementById('adminCard');
-
-const userEmailSpan = document.getElementById('userEmail');
-const statusText = document.getElementById('statusText');
-const expiryText = document.getElementById('expiryText');
-
-const authMsg = document.getElementById('authMsg');
-const codeMsg = document.getElementById('codeMsg');
-const adminMsg = document.getElementById('adminMsg');
-
-
-document.getElementById('googleBtn').onclick = ()=>{
-  auth.signInWithPopup(provider).catch(e=>authMsg.textContent=e.message);
+document.getElementById('googleBtn').onclick = async ()=>{
+  authMsg.textContent = '';
+  try{
+    await auth.signInWithPopup(provider);
+  }catch(e){
+    authMsg.textContent = e.message;
+  }
 };
 
+// LOGIN
 
-document.getElementById('emailLoginBtn').onclick = ()=>{
-  const email = email.value;
-  const pass = password.value;
-  auth.signInWithEmailAndPassword(email,pass)
-    .catch(()=>auth.createUserWithEmailAndPassword(email,pass))
-    .catch(e=>authMsg.textContent=e.message);
+document.getElementById('loginBtn').onclick = async ()=>{
+  authMsg.textContent='';
+  try{
+    await auth.signInWithEmailAndPassword(
+      emailInput.value.trim(),
+      passwordInput.value.trim()
+    );
+  }catch(e){
+    authMsg.textContent = e.message;
+  }
+};
+
+// SIGNUP
+
+document.getElementById('signupBtn').onclick = async ()=>{
+  authMsg.textContent='';
+  try{
+    await auth.createUserWithEmailAndPassword(
+      emailInput.value.trim(),
+      passwordInput.value.trim()
+    );
+  }catch(e){
+    authMsg.textContent = e.message;
+  }
 };
 
 
@@ -137,20 +280,18 @@ auth.onAuthStateChanged(async user=>{
 
   authCard.classList.add('hidden');
   appCard.classList.remove('hidden');
-  userEmailSpan.textContent = user.email;
+
+  userEmailEl.textContent = user.email;
+  await db.ref('users/'+user.uid+'/email').set(user.email);
 
   const snap = await db.ref('users/'+user.uid).get();
   const data = snap.val() || {};
 
-  if(isActive(data.accessExpires)){
-    statusText.textContent = 'Active ✅';
-    statusText.className='success';
-    expiryText.textContent = new Date(data.accessExpires).toLocaleString();
-  } else {
-    statusText.textContent = 'Not Active ❌';
-    statusText.className='danger';
-    expiryText.textContent = '—';
-  }
+  const active = isActive(data.accessExpires);
+  setStatus(active);
+  expiryText.textContent = active
+    ? new Date(data.accessExpires).toLocaleString()
+    : '—';
 
   const adminSnap = await db.ref('admins/'+user.uid).get();
   if(adminSnap.exists()) adminCard.classList.remove('hidden');
@@ -158,35 +299,40 @@ auth.onAuthStateChanged(async user=>{
 
 // ================= Access Code =================
 document.getElementById('redeemBtn').onclick = async ()=>{
-  const code = codeInput.value.trim();
+  codeMsg.textContent='';
+  const code = document.getElementById('codeInput').value.trim();
   if(!code) return;
 
   const codeRef = db.ref('codes/'+code);
   const snap = await codeRef.get();
-  if(!snap.exists()){ codeMsg.textContent='Invalid code'; return; }
 
+  if(!snap.exists()){ codeMsg.textContent='Invalid code'; return; }
   const c = snap.val();
   if(!c.valid){ codeMsg.textContent='Code already used'; return; }
 
   const user = auth.currentUser;
+
   await db.ref('users/'+user.uid).update({
     accessExpires: daysFromNow(c.duration),
     paymentType: 'code'
   });
 
   await codeRef.update({ valid:false, usedBy:user.uid });
+
   codeMsg.textContent='Access granted!';
   location.reload();
 };
 
-// ================= Admin Grant =================
+// ================= Admin =================
 document.getElementById('grantBtn').onclick = async ()=>{
-  const emailVal = adminEmail.value.trim();
-  const days = durationSelect.value;
+  adminMsg.textContent='';
+  const emailVal = document.getElementById('adminEmailInput').value.trim();
+  const days = document.getElementById('durationSelect').value;
   if(!emailVal) return;
 
   const usersSnap = await db.ref('users').get();
   let uid=null;
+
   usersSnap.forEach(child=>{
     if(child.val().email===emailVal) uid=child.key;
   });
@@ -203,15 +349,8 @@ document.getElementById('grantBtn').onclick = async ()=>{
 
 // ================= Stripe Placeholder =================
 document.getElementById('subscribeBtn').onclick = ()=>{
-  alert('Stripe Checkout goes here');
+  alert('Stripe checkout will connect here');
 };
-
-// ================= Save Email to DB =================
-auth.onAuthStateChanged(user=>{
-  if(!user) return;
-  db.ref('users/'+user.uid+'/email').set(user.email);
-});
-
 </script>
 </body>
-</html>
+<
