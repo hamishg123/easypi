@@ -281,8 +281,10 @@ function setStatus(active){
 let modalDismissed = false;
 let currentUID = null;
 function openModal(){
-  if(modalDismissed) return;           // user chose "maybe later"
-  if(!auth.currentUser) return;       // never show if signed out
+  // Only show if user is logged in
+  if(!auth.currentUser) return;
+  // Only show if not dismissed this session
+  if(modalDismissed) return;
   payModal.classList.remove('hidden');
 }
 function closeModal(){ payModal.classList.add('hidden'); }
@@ -326,6 +328,9 @@ document.getElementById('logoutBtn').onclick = ()=>{
 };
 
 // ================= Auth State =================
+// Ensure modal never flashes on first load
+closeModal();
+
 auth.onAuthStateChanged(async user=>{
   // ===== Signed Out =====
   if(!user){
