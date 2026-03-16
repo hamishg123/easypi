@@ -277,7 +277,7 @@ function setStatus(active){
   }
 }
 
-let modalDismissed = false;
+let modalDismissed = false; // stays dismissed until user signs out
 function openModal(){
   if(modalDismissed) return;
   payModal.classList.remove('hidden');
@@ -317,11 +317,13 @@ document.getElementById('signupBtn').onclick = async ()=>{
 
 // LOGOUT
 
-document.getElementById('logoutBtn').onclick = ()=>auth.signOut();
+document.getElementById('logoutBtn').onclick = ()=>{
+  modalDismissed = false; // allow modal again next login
+  auth.signOut();
+};
 
 // ================= Auth State =================
 auth.onAuthStateChanged(async user=>{
-  modalDismissed = false; // reset each session
 
   if(!user){
     authCard.classList.remove('hidden');
