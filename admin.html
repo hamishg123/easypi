@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EasyPi Admin</title>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+  <style>
+    body{margin:0;font-family:Inter,system-ui,Arial;background:#0b1220;color:#e5e7eb}
+    header{padding:18px 24px;font-size:22px;font-weight:700;background:#0f172a;border-bottom:1px solid rgba(255,255,255,.08)}
+    .wrap{max-width:720px;margin:auto;padding:28px}
+    .card{background:#111827;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:22px;margin-bottom:20px}
+    input,select,button{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.08);background:#0b1324;color:#e5e7eb;margin:8px 0}
+    button{background:#3b82f6;border:none;font-weight:600;cursor:pointer}
+    button.secondary{background:#1f2937}
+    .hidden{display:none}
+    .msg{font-size:13px;margin-top:6px}
+  </style>
+</head>
+<body>
+<header>EasyPi Admin Panel</header>
+<div class="wrap">
+
+  <div id="loginCard" class="card">
+    <h2>Admin Login</h2>
+    <input id="email" type="email" placeholder="Admin email" />
+    <input id="pass" type="password" placeholder="Admin password" />
+    <button id="loginBtn">Login</button>
+    <div id="loginMsg" class="msg"></div>
+  </div>
+
+  <div id="adminCard" class="card hidden">
+    <h2>Grant User Access</h2>
+    <input id="userEmail" placeholder="User email" />
+    <select id="duration">
+      <option value="7">7 days</option>
+      <option value="30">30 days</option>
+      <option value="90">90 days</option>
+      <option value="365">365 days</option>
+    </select>
+    <button id="grantBtn">Grant Access</button>
+    <div id="msg" class="msg"></div>
+    <button class="secondary" onclick="location.href='index.html'">Back</button>
+  </div>
+
+</div>
+
+<script>
+// ================= Firebase =================
+const firebaseConfig = {
+  apiKey: "AIzaSyD-pAnfOlyo5BY5vel9b8oUPaztlHeAAQU",
+  authDomain: "easypi-85674.firebaseapp.com",
+  databaseURL: "https://easypi-85674-default-rtdb.firebaseio.com",
+  projectId: "easypi-85674",
+  storageBucket: "easypi-85674.firebasestorage.app",
+  messagingSenderId: "686355179435",
+  appId: "1:686355179435:web:600cd3079ae3884e8c54ee"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ================= Admin Security =================
+const ADMIN_EMAIL = 'hamishgordon051@gmail.com';
+const ADMIN_PASS  = 'TestPassword';
+
+let unlocked=false;
+
+loginBtn.onclick = ()=>{
+  if(email.value.trim()===ADMIN_EMAIL && pass.value.trim()===ADMIN_PASS){
+    unlocked=true;
+    loginCard.classList.add('hidden');
+    adminCard.classList.remove('hidden');
+  }else{
+    loginMsg.textContent='Invalid credentials';
+  }
+};
+
+// ================= Grant Access =================
+function daysFromNow(days){ const d=new Date(); d.setDate(d.getDate()+Number(days)); return d.toISOString(); }
+
+grantBtn.onclick = async ()=>{
+  if(!unlocked){ msg.textContent='Locked'; return; }
+  const emailVal=userEmail.value.trim();
+  if(!emailVal) return;
+
+  const snap=await db.ref('users').get();
+  let uid=null;
+  snap.forEach(c=>{ if(c.val().email===emailVal) uid=c.key; });
+  if(!uid){ msg.textContent='User not found'; return; }
+
+  await db.ref('users/'+uid).update({ accessExpires: daysFromNow(duration.value), paymentType:'cash' });
+  msg.textContent='Access granted';
+};
+</script>
+</body>
+</html>
