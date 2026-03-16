@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>EasyPi</title>
+  <title>EasyPi Remote Access</title>
 
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -106,7 +106,7 @@
     .bad{background:rgba(239,68,68,.15);color:var(--bad)}
     .muted{color:var(--muted);font-size:13px}
 
-    .hidden{display:none}
+    .hidden{display:none !important}
     .msg{font-size:13px;margin-top:6px}
 
     .footerBar{
@@ -156,9 +156,18 @@
       font-weight:800;
       margin:10px 0;
     }
+
+    /* Loading shield prevents modal flash */
+    #loadingShield{
+      position:fixed;inset:0;background:var(--bg);z-index:100;
+      display:flex;align-items:center;justify-content:center;
+      color:var(--muted);font-size:14px;letter-spacing:.5px;
+    }
   </style>
 </head>
 <body>
+<div id="loadingShield">Loading…</div>
+
 <header>
   <div class="brand">
     <div class="dot"></div>
@@ -217,7 +226,7 @@
   <div class="modal">
     <h2>Subscription Required</h2>
     <div class="muted">Get full remote access to your Raspberry Pi</div>
-    <div class="price">£2<span style="font-size:14px;font-weight:600"> / month</span></div>
+    <div class="price">£2<span style="font-size:14px;font-weight:600"> / week</span></div>
     <button id="subscribeBtn">Subscribe Now</button>
     <button id="laterBtn" class="ghost">Maybe later</button>
   </div>
@@ -253,6 +262,7 @@ const authCard = document.getElementById('authCard');
 const appCard = document.getElementById('appCard');
 const payModal = document.getElementById('payModal');
 const activeBar = document.getElementById('activeBar');
+const loadingShield = document.getElementById('loadingShield');
 
 const emailInput = document.getElementById('emailInput');
 const passwordInput = document.getElementById('passwordInput');
@@ -261,6 +271,10 @@ const authMsg = document.getElementById('authMsg');
 const userEmailEl = document.getElementById('userEmail');
 const statusPill = document.getElementById('statusPill');
 const expiryText = document.getElementById('expiryText');
+
+// ================= State =================
+let modalDismissed = false;   // user clicked maybe later
+let authResolved = false;     // prevents popup before auth check finishes
 
 // ================= Helpers =================
 function isActive(expiry){
@@ -277,14 +291,10 @@ function setStatus(active){
   }
 }
 
-// Tracks if user manually closed modal during this login session
-let modalDismissed = false;
-let currentUID = null;
 function openModal(){
-  // Only show if user is logged in
-  if(!auth.currentUser) return;
-  // Only show if not dismissed this session
-  if(modalDismissed) return;
+  if(!authResolved) return;         // wait for auth
+  if(!auth.currentUser) return;     // must be signed in
+  if(modalDismissed) return;        // user closed it
   payModal.classList.remove('hidden');
 }
 function closeModal(){ payModal.classList.add('hidden'); }
@@ -323,31 +333,21 @@ document.getElementById('signupBtn').onclick = async ()=>{
 // LOGOUT
 
 document.getElementById('logoutBtn').onclick = ()=>{
-  modalDismissed = false; // allow modal again next login
+  modalDismissed = false; // allow again next login
   auth.signOut();
 };
 
 // ================= Auth State =================
-// Ensure modal never flashes on first load
-closeModal();
-
 auth.onAuthStateChanged(async user=>{
-  // ===== Signed Out =====
+  closeModal(); // never flash
+
   if(!user){
-    currentUID = null;
-    modalDismissed = false;           // allow modal next login
     authCard.classList.remove('hidden');
     appCard.classList.add('hidden');
     activeBar.classList.add('hidden');
-    closeModal();
+    authResolved = true;
+    loadingShield.style.display='none';
     return;
-  }
-
-  // ===== Signed In =====
-  // If different user logs in, reset dismissal
-  if(currentUID !== user.uid){
-    modalDismissed = false;
-    currentUID = user.uid;
   }
 
   authCard.classList.add('hidden');
@@ -367,17 +367,19 @@ auth.onAuthStateChanged(async user=>{
 
   if(active){
     activeBar.classList.remove('hidden');
-    closeModal();
   } else {
     activeBar.classList.add('hidden');
-    openModal(); // only shows when signed in & inactive
+    openModal();
   }
+
+  authResolved = true;
+  loadingShield.style.display='none';
 });
 
 // ================= UI Actions =================
 
 document.getElementById('laterBtn').onclick = ()=>{
-  modalDismissed = true;  // never show again this session
+  modalDismissed = true;
   closeModal();
 };
 
