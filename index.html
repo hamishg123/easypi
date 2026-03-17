@@ -308,14 +308,22 @@ document.getElementById('googleBtn').onclick = async ()=>{
 
 // LOGIN
 
-document.getElementById('loginBtn').onclick = async ()=>{
-  authMsg.textContent='';
+loginBtn.onclick = async ()=>{
+  authMsg.textContent = '';
   try{
     await auth.signInWithEmailAndPassword(
       emailInput.value.trim(),
       passwordInput.value.trim()
     );
-  }catch(e){ authMsg.textContent = e.message; }
+  }catch(e){
+    if(e.code === 'auth/wrong-password'){
+      authMsg.textContent = 'Password wrong';
+    }else if(e.code === 'auth/user-not-found'){
+      authMsg.textContent = 'Email not found';
+    }else{
+      authMsg.textContent = 'Login failed';
+    }
+  }
 };
 
 // SIGNUP
