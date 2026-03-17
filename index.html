@@ -56,6 +56,8 @@
 
     .card{
       background:linear-gradient(180deg,var(--card),var(--card2));
+      position:relative;
+      overflow:hidden;
       border:1px solid rgba(255,255,255,.06);
       border-radius:18px;
       padding:22px;
@@ -88,6 +90,7 @@
     }
 
     button:hover{transform:translateY(-1px);opacity:.95}
+    button:active{transform:translateY(0);opacity:.9}
     button.secondary{background:#1f2937;box-shadow:none}
     button.ghost{background:transparent;border:1px solid rgba(255,255,255,.15);box-shadow:none}
 
@@ -152,7 +155,7 @@
     @keyframes pop{from{transform:scale(.96);opacity:.6}to{transform:scale(1);opacity:1}}
 
     .price{
-      font-size:28px;
+      font-size:32px;
       font-weight:800;
       margin:10px 0;
     }
@@ -275,6 +278,7 @@ const expiryText = document.getElementById('expiryText');
 // ================= State =================
 let modalDismissed = false;   // user clicked maybe later
 let authResolved = false;     // prevents popup before auth check finishes
+let currentActive = false;    // subscription state cache
 
 // ================= Helpers =================
 function isActive(expiry){
@@ -308,22 +312,14 @@ document.getElementById('googleBtn').onclick = async ()=>{
 
 // LOGIN
 
-loginBtn.onclick = async ()=>{
-  authMsg.textContent = '';
+document.getElementById('loginBtn').onclick = async ()=>{
+  authMsg.textContent='';
   try{
     await auth.signInWithEmailAndPassword(
       emailInput.value.trim(),
       passwordInput.value.trim()
     );
-  }catch(e){
-    if(e.code === 'auth/wrong-password'){
-      authMsg.textContent = 'Password wrong';
-    }else if(e.code === 'auth/user-not-found'){
-      authMsg.textContent = 'Email not found';
-    }else{
-      authMsg.textContent = 'Login failed';
-    }
-  }
+  }catch(e){ authMsg.textContent = e.message; }
 };
 
 // SIGNUP
@@ -368,6 +364,7 @@ auth.onAuthStateChanged(async user=>{
   const data = snap.val() || {};
 
   const active = isActive(data.accessExpires);
+  currentActive = active; // cache for buttons
   setStatus(active);
   expiryText.textContent = active
     ? new Date(data.accessExpires).toLocaleString()
@@ -407,10 +404,19 @@ document.getElementById('manageBtn').onclick = ()=>{
   alert('Customer portal will open here');
 };
 
-// Connect placeholder
+// Connect to Pi
 
 document.getElementById('connectBtn').onclick = ()=>{
-  alert('Secure Pi tunnel will connect here');
+  // If not paid, force pay popup
+  if(!currentActive){
+    modalDismissed = false; // ensure it shows
+    openModal();
+    return;
+  }
+
+  // If paid, connect
+  alert('Connecting to your Raspberry Pi…');
+  // TODO: open your tunnel / remote desktop URL here
 };
 </script>
 </body>
